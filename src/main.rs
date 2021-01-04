@@ -8,15 +8,24 @@ use std::str::from_utf8;
 
 fn main() {
     for asn in args().skip(1) {
-        match get_ipv4_by_asn(&asn) {
-            Ok(combiner) => {
-                println!("{}", combiner);
-            }
+        match print_static_routes(&asn) {
+            Ok(_) => continue,
             Err(err) => {
                 eprintln!("while retrieving {}, an error occured: {}", asn, err);
             }
         }
     }
+}
+
+fn print_static_routes(asn: &str) -> Result<(), Box<dyn Error>> {
+    for cidr in get_ipv4_by_asn(asn)?.iter() {
+        println!(
+            r#"route {:17} via "lo" {{ bgp_path.prepend({}); }};"#,
+            cidr.to_string(),
+            asn
+        )
+    }
+    Ok(())
 }
 
 fn get_ipv4_by_asn(asn: &str) -> Result<Ipv4CidrCombiner, Box<dyn Error>> {
